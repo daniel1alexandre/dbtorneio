@@ -8,6 +8,7 @@ const server = http.createServer(app);
 
 // Setup WebSocket server
 const wss = new Server({ server });
+global.wss = wss; // Expose globally to broadcast from controllers
 
 wss.on('connection', (ws) => {
   console.log('New WebSocket client connected');
@@ -16,7 +17,7 @@ wss.on('connection', (ws) => {
     console.log(`Received: ${message}`);
   });
 
-  ws.send(JSON.stringify({ type: 'connected', message: 'Connected to TourneyBeach WS' }));
+  ws.send(JSON.stringify({ type: 'CONNECTED', message: 'Connected to TourneyBeach WS' }));
 });
 
 server.listen(PORT, () => {
