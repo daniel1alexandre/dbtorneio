@@ -13,12 +13,14 @@ const torneiosRoutes = require('./routes/torneios.routes');
 const inscricoesRoutes = require('./routes/inscricoes.routes');
 const pixRoutes = require('./routes/pix.routes');
 const partidasRoutes = require('./routes/partidas.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/torneios', torneiosRoutes);
 app.use('/api/inscricoes', inscricoesRoutes);
 app.use('/api/pix', pixRoutes);
 app.use('/api/partidas', partidasRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Basic healthcheck route
 app.get('/health', (req, res) => {

@@ -20,11 +20,19 @@ class PartidasController {
     
     // Simplificando o join para fins do escopo. Na prática, você joinará com quadras e atletas.
     let query = `
-      SELECT p.*, q.numero as quadra_numero 
+      SELECT p.*, q.numero as quadra_numero,
+             a1.nome_completo as atleta1_nome,
+             a2.nome_completo as atleta2_nome,
+             a3.nome_completo as atleta3_nome,
+             a4.nome_completo as atleta4_nome
       FROM PARTIDAS p
       LEFT JOIN QUADRAS q ON p.quadra_id = q.id
       JOIN CHAVEAMENTOS ch ON p.chaveamento_id = ch.id
-      WHERE ch.torneio_id = $1
+      LEFT JOIN ATLETAS a1 ON p.atleta1_id = a1.id
+      LEFT JOIN ATLETAS a2 ON p.atleta2_id = a2.id
+      LEFT JOIN ATLETAS a3 ON p.atleta3_id = a3.id
+      LEFT JOIN ATLETAS a4 ON p.atleta4_id = a4.id
+      WHERE ($1::uuid IS NULL OR ch.torneio_id = $1::uuid)
     `;
     const params = [torneio_id];
 

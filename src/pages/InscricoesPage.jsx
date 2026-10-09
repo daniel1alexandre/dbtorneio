@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { inscricoes, categorias } from '../data/mockData';
+import api from '../services/api';
 import { Search, Filter, Plus, CheckCircle, Clock, XCircle, Eye, Download, QrCode } from 'lucide-react';
 
 function StatusBadge({ status }) {
@@ -24,6 +24,32 @@ export default function InscricoesPage() {
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedInsc, setSelectedInsc] = useState(null);
+  
+  const [inscricoes, setInscricoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Busca do banco de dados
+    api.get('/inscricoes')
+      .then(res => {
+        const data = res.data.map(i => ({
+          id: i.id,
+          status: i.status,
+          atleta: i.atleta_nome,
+          parceiro: i.parceiro_nome,
+          categoria: i.categoria_nome,
+          valor_pago: parseFloat(i.valor_pago),
+          data_inscricao: i.data_inscricao,
+          data_pagamento: i.data_pagamento,
+          pix_id: i.pix_id
+        }));
+        setInscricoes(data);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const categoriasUnicas = Array.from(new Set(inscricoes.map(i => i.categoria)));
 
   const filtered = inscricoes.filter(i => {
     const matchSearch = !search || i.atleta.toLowerCase().includes(search.toLowerCase()) || i.parceiro?.toLowerCase().includes(search.toLowerCase());
@@ -41,6 +67,10 @@ export default function InscricoesPage() {
 
   return (
     <Layout title="Inscrições" subtitle="Gerenciar inscrições e pagamentos do torneio">
+      {loading ? (
+        <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Carregando inscrições...</div>
+      ) : (
+        <>
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
@@ -90,7 +120,7 @@ export default function InscricoesPage() {
           {/* Category filter */}
           <select className="input" style={{ width: 'auto' }} value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)}>
             <option value="todas">Todas as categorias</option>
-            {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+            {categoriasUnicas.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
 
           {/* Actions */}
@@ -223,6 +253,8 @@ export default function InscricoesPage() {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </Layout>
   );

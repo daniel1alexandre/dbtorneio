@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Volleyball, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import api from '../services/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -7,16 +9,25 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !senha) { setError('Preencha todos os campos.'); return; }
     setLoading(true);
     setError('');
-    setTimeout(() => {
+    
+    try {
+      const response = await api.post('/auth/login', { email, senha });
+      localStorage.setItem('@TourneyBeach:token', response.data.token);
+      localStorage.setItem('@TourneyBeach:user', JSON.stringify(response.data.user));
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Erro ao realizar login. Verifique suas credenciais.');
+    } finally {
       setLoading(false);
-      setError('Use: admin@tourneybeach.com / qualquer senha');
-    }, 1200);
+    }
   };
 
   return (
@@ -75,7 +86,7 @@ export default function LoginPage() {
                   className="input"
                   style={{ paddingLeft: 36 }}
                   type="email"
-                  placeholder="admin@tourneybeach.com"
+                  placeholder="baumann@viva.com.br"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                 />

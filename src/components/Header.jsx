@@ -8,6 +8,8 @@ export default function Header({ title, subtitle }) {
   const [notifCount] = useState(3);
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem('@TourneyBeach:user') || '{"nome": "Desconhecido", "tipo_usuario": "N/A"}');
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     // Simulate WS flicker
@@ -122,10 +124,10 @@ export default function Header({ title, subtitle }) {
           background: 'linear-gradient(135deg, #003366, #006699)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 700, fontSize: 13,
-        }}>C</div>
+        }}>{user.nome.charAt(0).toUpperCase()}</div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Carlos D.</div>
-          <div style={{ fontSize: 11, color: '#888' }}>Admin</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{user.nome}</div>
+          <div style={{ fontSize: 11, color: '#888', textTransform: 'capitalize' }}>{user.tipo_usuario}</div>
         </div>
         <ChevronDown size={14} color="#888" />
       </div>

@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Volleyball, Play, Square, RotateCcw, CheckCircle, Timer, ArrowLeft } from 'lucide-react';
+import { Volleyball, Play, Square, RotateCcw, CheckCircle, Timer, ArrowLeft, Clock } from 'lucide-react';
+import api from '../services/api';
 
-// Standalone dark page - referee control (no sidebar, OLED-friendly)
 export default function ArbitroPage() {
+  const [view, setView] = useState('list'); // list | match
+  const [partidas, setPartidas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+
+  // Match control state
   const [fase, setFase] = useState('espera'); // espera | aquecimento | partida | finalizada
   const [aquecTime, setAquecTime] = useState(300); // 5 min
   const [matchTime, setMatchTime] = useState(0);
@@ -12,7 +18,6 @@ export default function ArbitroPage() {
   const [set3, setSet3] = useState(['', '']);
   const [vencedor, setVencedor] = useState(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [quadra] = useState(3);
   const navigate = useNavigate();
   const aquecRef = useRef(null);
   const matchRef = useRef(null);
@@ -59,8 +64,75 @@ export default function ArbitroPage() {
     setConfirmando(false);
   };
 
-  const dupla1 = 'Santos / Arruda';
-  const dupla2 = 'Silva / Silveira';
+  useEffect(() => {
+    if (view === 'list') {
+      api.get('/partidas')
+        .then(res => setPartidas(res.data))
+        .catch(err => console.error(err))
+        .finally(() => setLoading(false));
+    }
+  }, [view]);
+
+  const handleSelectMatch = (match) => {
+    setSelectedMatch(match);
+    resetTudo();
+    setView('match');
+  };
+
+  const dupla1 = selectedMatch ? `${selectedMatch.atleta1_nome || 'A1'} / ${selectedMatch.atleta2_nome || 'A2'}` : 'Santos / Arruda';
+  const dupla2 = selectedMatch ? `${selectedMatch.atleta3_nome || 'A3'} / ${selectedMatch.atleta4_nome || 'A4'}` : 'Silva / Silveira';
+  const quadra = selectedMatch ? selectedMatch.quadra_numero : 3;
+
+  if (view === 'list') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#000', color: '#fff', padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: 8, border: '1px solid #333',
+              background: '#1A1A1A', cursor: 'pointer', color: '#AAA',
+            }}
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: 0 }}>Painel do Árbitro</h1>
+            <p style={{ color: '#888', margin: 0, fontSize: 13 }}>Selecione uma partida para arbitrar</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Carregando cronograma...</div>
+        ) : (
+          <div style={{ display: 'grid', gap: 12 }}>
+            {partidas.map(p => (
+              <div key={p.id} style={{
+                background: '#111', border: '1px solid #222', borderRadius: 12, padding: 16,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
+                transition: 'border 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#FF6600'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+              onClick={() => handleSelectMatch(p)}
+              >
+                <div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ background: '#333', padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>Quadra {p.quadra_numero || '?'}</span>
+                    <span style={{ color: '#888', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12}/> {p.horario_agendado?.slice(0,5)}</span>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{p.atleta1_nome || 'A1'} / {p.atleta2_nome || 'A2'} <span style={{color: '#555', margin: '0 8px'}}>VS</span> {p.atleta3_nome || 'A3'} / {p.atleta4_nome || 'A4'}</div>
+                </div>
+                <button className="btn btn-primary btn-sm" style={{ padding: '8px 16px' }}>Arbitrar →</button>
+              </div>
+            ))}
+            {partidas.length === 0 && <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Nenhuma partida agendada.</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="arbitro-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
@@ -72,13 +144,13 @@ export default function ArbitroPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => setView('list')}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 36, height: 36, borderRadius: 8, border: '1px solid #333',
               background: '#1A1A1A', cursor: 'pointer', color: '#AAA',
             }}
-            title="Voltar"
+            title="Voltar para a lista de jogos"
           >
             <ArrowLeft size={18} />
           </button>

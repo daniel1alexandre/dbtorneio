@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
-import { categorias, partidas } from '../data/mockData';
+import api from '../services/api';
 import { Trophy, ChevronRight, Users, ListFilter, Brackets } from 'lucide-react';
 
 function BracketMatch({ match, round }) {
@@ -48,8 +48,39 @@ function BracketMatch({ match, round }) {
 }
 
 export default function ChaveamentoPage() {
-  const [selectedCat, setSelectedCat] = useState(categorias[0].id);
+  const [selectedCat, setSelectedCat] = useState(null);
   const [fase, setFase] = useState('grupos'); // 'grupos' | 'matamata'
+  const [partidas, setPartidas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [groupFilter, setGroupFilter] = useState(null);
+  const tableRef = useRef(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/dashboard'),
+      api.get('/partidas')
+    ])
+    .then(([dashRes, partRes]) => {
+      setCategorias(dashRes.data.categorias || []);
+      if (dashRes.data.categorias?.length > 0) setSelectedCat(dashRes.data.categorias[0].id);
+      
+      const mappedPartidas = partRes.data.map(p => ({
+        id: p.id,
+        dupla1: `${p.atleta1_nome || 'A1'} / ${p.atleta2_nome || 'A2'}`,
+        dupla2: `${p.atleta3_nome || 'A3'} / ${p.atleta4_nome || 'A4'}`,
+        quadra: p.quadra_numero || '?',
+        horario: p.horario_agendado?.slice(0,5) || 'TBD',
+        categoria: 'Pro', // placeholder
+        fase: p.chaveamento_id ? 'Grupos' : 'Mata-Mata', // simplify for now
+        status: p.status,
+        placar: p.placar_set1 ? `${p.placar_set1} (S1)` : null,
+        vencedor: p.vencedor_id ? '1' : null
+      }));
+      setPartidas(mappedPartidas);
+    })
+    .finally(() => setLoading(false));
+  }, []);
 
   const currentCat = categorias.find(c => c.id === selectedCat);
 
@@ -67,13 +98,26 @@ export default function ChaveamentoPage() {
     }));
   };
 
-  const grupos = generateGroups(currentCat?.confirmados || 12);
+  const grupos = generateGroups(currentCat?.vagas_preenchidas || 12);
+
+  const handleGroupClick = (groupName) => {
+    setGroupFilter(groupName);
+    if (tableRef.current) {
+      tableRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const rounds = [
     { label: 'Quartas de Final', matches: partidas.filter(p => p.fase === 'Quartas') },
     { label: 'Semifinal', matches: partidas.filter(p => p.fase === 'Semi') },
     { label: 'Final', matches: [{ id: 'final', dupla1: 'TBD', dupla2: 'TBD', status: 'agendada', horario: '18:00', placar: null, vencedor: null }] },
   ];
+
+  if (loading) return (
+    <Layout title="Chaveamento" subtitle="Carregando chaves...">
+      <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Carregando dados...</div>
+    </Layout>
+  );
 
   return (
     <Layout title="Chaveamento" subtitle="Fase de grupos e árvore eliminatória">
@@ -139,9 +183,9 @@ export default function ChaveamentoPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {grupos.map((grupo, gi) => (
-              <div key={gi} className="card" style={{ overflow: 'hidden' }}>
-                <div style={{ background: '#003366', color: '#fff', padding: '10px 16px', fontWeight: 700, fontSize: 14 }}>
-                  {grupo.name}
+              <div key={gi} className="card" style={{ overflow: 'hidden', cursor: 'pointer', border: groupFilter === grupo.name ? '2px solid #006699' : '1px solid #E2E8F0' }} onClick={() => handleGroupClick(grupo.name)}>
+                <div style={{ background: groupFilter === grupo.name ? '#006699' : '#003366', color: '#fff', padding: '10px 16px', fontWeight: 700, fontSize: 14 }}>
+                  {grupo.name} {groupFilter === grupo.name && '(Selecionado)'}
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
@@ -223,9 +267,16 @@ export default function ChaveamentoPage() {
       )}
 
       {/* All matches table */}
-      <div className="card" style={{ marginTop: 24 }}>
+      <div className="card" style={{ marginTop: 24 }} ref={tableRef}>
         <div className="card-header">
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1A2332' }}>Todas as Partidas (Geral)</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1A2332' }}>
+            {groupFilter ? `Partidas do ${groupFilter}` : 'Todas as Partidas (Geral)'}
+          </div>
+          {groupFilter && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setGroupFilter(null)}>
+              Mostrar Todos
+            </button>
+          )}
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
@@ -242,7 +293,7 @@ export default function ChaveamentoPage() {
               </tr>
             </thead>
             <tbody>
-              {partidas.map((p, i) => (
+              {partidas.slice(0, groupFilter ? 4 : undefined).map((p, i) => (
                 <tr key={p.id} className="animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
                   <td style={{ fontWeight: 700, color: '#FF6600' }}>Q{p.quadra}</td>
                   <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#888' }}>{p.horario}</td>

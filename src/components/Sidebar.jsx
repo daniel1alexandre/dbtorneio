@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Trophy, DollarSign,
   Settings, Wifi, LogOut, Volleyball, Users, Monitor
@@ -16,6 +16,16 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+  
+  const user = JSON.parse(localStorage.getItem('@TourneyBeach:user') || '{"nome": "Desconhecido", "tipo_usuario": "N/A"}');
+
+  const handleLogout = () => {
+    localStorage.removeItem('@TourneyBeach:token');
+    localStorage.removeItem('@TourneyBeach:user');
+    navigate('/login');
+  };
+
   return (
     <aside className="sidebar">
       {/* Logo */}
@@ -80,14 +90,16 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 700, fontSize: 13,
           }}>
-            C
+            {user.nome.charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Carlos Drummond</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Administrador</div>
+            <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.nome}</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textTransform: 'capitalize' }}>{user.tipo_usuario}</div>
           </div>
         </div>
-        <button style={{
+        <button 
+          onClick={handleLogout}
+          style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 8,
           padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
           background: 'transparent', color: 'rgba(255,255,255,0.45)', fontSize: 13,

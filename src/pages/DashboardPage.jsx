@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import api from '../services/api';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -9,10 +10,6 @@ import {
   CheckCircle, Clock, AlertTriangle, ArrowUpRight,
   Zap, Activity
 } from 'lucide-react';
-import {
-  inscricoes, categorias, partidas, financeiro,
-  dailyInscricoes, nivelDistribuicao, recentePix, torneioAtivo
-} from '../data/mockData';
 
 function StatCard({ label, value, sub, icon: Icon, color, colorClass, delay = 0 }) {
   return (
@@ -92,23 +89,37 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function DashboardPage() {
-  const totalConfirmadas = inscricoes.filter(i => i.status === 'confirmada').length;
-  const totalPendentes = inscricoes.filter(i => i.status === 'pendente').length;
-  const totalVagas = categorias.reduce((a, c) => a + c.vagas, 0);
-  const totalConfirmadosCat = categorias.reduce((a, c) => a + c.confirmados, 0);
-  const ocupacao = Math.round((totalConfirmadosCat / totalVagas) * 100);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const partFinalizadas = partidas.filter(p => p.status === 'finalizada').length;
-  const partAndamento = partidas.filter(p => p.status === 'em_andamento').length;
-  const partAquec = partidas.filter(p => p.status === 'aquecimento').length;
+  useEffect(() => {
+    api.get('/dashboard')
+      .then(res => setData(res.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !data) return (
+    <Layout title="Dashboard" subtitle="Carregando métricas...">
+      <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Carregando dados do servidor...</div>
+    </Layout>
+  );
+
+  const {
+    torneio, totalVagas, vagasPreenchidas, partidas,
+    inscricoes, categorias, dailyInscricoes, nivelDistribuicao, recentePix
+  } = data;
+  
+  const ocupacao = totalVagas > 0 ? Math.round((vagasPreenchidas / totalVagas) * 100) : 0;
+  const lucroEstimado = inscricoes.receitaTotal * 0.6; // Mock para a margin de 60%
 
   return (
-    <Layout title="Dashboard" subtitle={`${torneioAtivo.nome} · ${torneioAtivo.local}`}>
+    <Layout title="Dashboard" subtitle={`${torneio?.nome || 'Torneio Principal'} · ${torneio?.local || 'Sem local'}`}>
       {/* ── Stats Grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 28 }}>
         <StatCard
           label="Atletas Inscritos"
-          value={`${totalConfirmadosCat}`}
+          value={`${vagasPreenchidas}`}
           sub={`${ocupacao}% das vagas preenchidas`}
           icon={Users}
           color="#006699"
@@ -117,8 +128,8 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Receita PIX"
-          value={`R$ ${(financeiro.receita_total / 1000).toFixed(1)}k`}
-          sub={`${totalConfirmadas} pagamentos confirmados`}
+          value={`R$ ${(inscricoes.receitaTotal / 1000).toFixed(1)}k`}
+          sub={`${inscricoes.confirmadas} pagamentos confirmados`}
           icon={DollarSign}
           color="#FF6600"
           colorClass="orange"
@@ -126,8 +137,8 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Partidas"
-          value={`${partidas.length}`}
-          sub={`${partAndamento + partAquec} ativas agora`}
+          value={`${partidas.total}`}
+          sub={`${partidas.em_andamento + partidas.aquecimento} ativas agora`}
           icon={Play}
           color="#00AA00"
           colorClass="green"
@@ -135,8 +146,8 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Lucro Líquido"
-          value={`R$ ${(financeiro.lucro / 1000).toFixed(1)}k`}
-          sub={`Margem de ${Math.round((financeiro.lucro / financeiro.receita_total) * 100)}%`}
+          value={`R$ ${(lucroEstimado / 1000).toFixed(1)}k`}
+          sub={`Margem estimada de 60%`}
           icon={TrendingUp}
           color="#FFD700"
           colorClass="gold"
@@ -149,11 +160,11 @@ export default function DashboardPage() {
         display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap',
       }}>
         {[
-          { icon: CheckCircle, label: 'Finalizadas', val: partFinalizadas, color: '#999' },
-          { icon: Activity, label: 'Em Andamento', val: partAndamento, color: '#00AA00' },
-          { icon: Zap, label: 'Aquecimento', val: partAquec, color: '#FFD700' },
-          { icon: AlertTriangle, label: 'PIX Pendentes', val: totalPendentes, color: '#FF6600' },
-          { icon: Clock, label: 'Agendadas', val: partidas.filter(p => p.status === 'agendada').length, color: '#006699' },
+          { icon: CheckCircle, label: 'Finalizadas', val: partidas.finalizadas, color: '#999' },
+          { icon: Activity, label: 'Em Andamento', val: partidas.em_andamento, color: '#00AA00' },
+          { icon: Zap, label: 'Aquecimento', val: partidas.aquecimento, color: '#FFD700' },
+          { icon: AlertTriangle, label: 'PIX Pendentes', val: inscricoes.pendentes, color: '#FF6600' },
+          { icon: Clock, label: 'Agendadas', val: partidas.agendadas, color: '#006699' },
         ].map((item, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -283,14 +294,14 @@ export default function DashboardPage() {
         <div style={{ padding: '20px 24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {categorias.map((cat, i) => {
-              const pct = Math.round((cat.confirmados / cat.vagas) * 100);
+              const pct = cat.numero_vagas > 0 ? Math.round((cat.vagas_preenchidas / cat.numero_vagas) * 100) : 0;
               const color = pct >= 100 ? '#FF6600' : pct >= 75 ? '#006699' : '#00AA00';
               return (
                 <div key={cat.id} className="animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{cat.nome}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color }}>
-                      {cat.confirmados}/{cat.vagas}
+                      {cat.vagas_preenchidas}/{cat.numero_vagas}
                     </span>
                   </div>
                   <div className="progress-bar-track">
@@ -300,7 +311,7 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
-                    {pct}% · R$ {cat.valor.toFixed(2)}/dupla
+                    {pct}% ocupação
                   </div>
                 </div>
               );

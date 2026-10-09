@@ -69,7 +69,7 @@ class InscricoesController {
     const { torneio_id, status } = req.query;
     
     let query = `
-      SELECT i.id, i.status, i.valor_pago, i.data_inscricao,
+      SELECT i.id, i.status, i.valor_pago, i.data_inscricao, i.data_pagamento, i.pix_id,
              a1.nome_completo as atleta_nome, 
              a2.nome_completo as parceiro_nome,
              c.nome as categoria_nome
