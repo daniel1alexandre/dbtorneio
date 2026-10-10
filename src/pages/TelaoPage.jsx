@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { partidas, quadras } from '../data/mockData';
-import { Volleyball, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.jpg';
 
 const PANEL_DURATION = 30000; // 30s each
 
@@ -155,11 +156,11 @@ export default function TelaoPage() {
   const upcomingMatches = partidas.filter(m => m.status !== 'finalizada').slice(0, 8);
 
   return (
-    <div className="telao-root" style={{ minHeight: '100vh' }}>
+    <div className="telao-root" style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       {/* Background decoration */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse at 20% 50%, rgba(0,68,136,0.3) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,102,0,0.1) 0%, transparent 50%)',
+        background: 'radial-gradient(ellipse at 20% 50%, rgba(17,69,45,0.3) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(229,214,26,0.05) 0%, transparent 50%)',
       }} />
 
       {/* Top bar */}
@@ -184,12 +185,12 @@ export default function TelaoPage() {
           >
             <ArrowLeft size={20} />
           </button>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #FF6600, #FF8833)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Volleyball size={24} color="#fff" />
+          <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden' }}>
+            <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>TourneyBeach</div>
-            <div style={{ fontSize: 12, color: '#FF6600', fontWeight: 600, letterSpacing: '2px' }}>COPA ELITE COPACABANA 2026</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>DBTorneios</div>
+            <div style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600, letterSpacing: '2px' }}>COPA ELITE COPACABANA 2026</div>
           </div>
         </div>
 

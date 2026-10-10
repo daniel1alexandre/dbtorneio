@@ -64,7 +64,7 @@ export default function ConfiguracoesPage() {
   const toggle = (key) => setConfig(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <Layout title="Configurações" subtitle="Parâmetros globais da plataforma TourneyBeach">
+    <Layout title="Configurações" subtitle="Parâmetros globais da plataforma DBTorneios">
       <div style={{ display: 'flex', gap: 24 }}>
         {/* Sidebar nav */}
         <div style={{ width: 220, flexShrink: 0 }}>

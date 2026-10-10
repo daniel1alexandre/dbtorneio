@@ -7,6 +7,7 @@ const router = Router();
 // Rotas públicas ou abertas
 router.get('/', torneiosController.list);
 router.get('/:id', torneiosController.getById);
+router.get('/:id/detalhes', torneiosController.getDetalhes);
 
 // Rotas protegidas (apenas admin ou organizador)
 router.use(authenticateToken);

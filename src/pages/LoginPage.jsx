@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Volleyball, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import logo from '../assets/logo.jpg';
 import api from '../services/api';
 
 export default function LoginPage() {
@@ -21,7 +22,15 @@ export default function LoginPage() {
       const response = await api.post('/auth/login', { email, senha });
       localStorage.setItem('@TourneyBeach:token', response.data.token);
       localStorage.setItem('@TourneyBeach:user', JSON.stringify(response.data.user));
-      navigate('/');
+      
+      const tipo = response.data.user.tipo_usuario;
+      if (tipo === 'admin') {
+        navigate('/admin-torneios');
+      } else if (tipo === 'atleta') {
+        navigate('/meus-torneios');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Erro ao realizar login. Verifique suas credenciais.');
@@ -33,7 +42,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #001A33 0%, #003366 50%, #004488 100%)',
+      background: 'var(--color-bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px', fontFamily: "'Inter', sans-serif",
       position: 'relative', overflow: 'hidden',
@@ -41,36 +50,36 @@ export default function LoginPage() {
       {/* Background blobs */}
       <div style={{
         position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(255,102,0,0.15) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(17,69,45,0.15) 0%, transparent 70%)',
         top: -200, right: -100, pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', width: 400, height: 400, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(0,102,153,0.2) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(229,214,26,0.08) 0%, transparent 70%)',
         bottom: -100, left: -100, pointerEvents: 'none',
       }} />
 
       {/* Login card */}
       <div style={{
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
+        background: 'var(--color-surface)', backdropFilter: 'blur(20px)',
         borderRadius: 24, padding: '44px 40px', width: '100%', maxWidth: 420,
-        boxShadow: '0 32px 64px rgba(0,0,0,0.3)',
+        boxShadow: '0 32px 64px rgba(0,0,0,0.5)',
+        border: '1px solid var(--color-border)',
         animation: 'fadeInUp 0.4s ease',
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: 'linear-gradient(135deg, #FF6600, #FF8833)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(255,102,0,0.4)',
+            width: 80, height: 80, borderRadius: 18,
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
           }}>
-            <Volleyball size={32} color="#fff" />
+            <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#003366', letterSpacing: '-0.5px', margin: 0 }}>
-            TourneyBeach
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.5px', margin: 0 }}>
+            DBTorneios
           </h1>
-          <p style={{ fontSize: 13, color: '#888', marginTop: 6 }}>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
             Plataforma de Gestão de Torneios de Beach Tennis
           </p>
         </div>
@@ -143,6 +152,13 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#555' }}>
+          É atleta e quer jogar um torneio? <br/>
+          <a href="/cadastro" style={{ color: '#FF6600', fontWeight: 700, textDecoration: 'none', display: 'inline-block', marginTop: 4 }}>
+            Crie sua conta aqui
+          </a>
+        </div>
 
         {/* Roles info */}
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #F0F4F8' }}>

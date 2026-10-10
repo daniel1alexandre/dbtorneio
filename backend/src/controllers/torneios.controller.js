@@ -9,12 +9,42 @@ class TorneiosController {
   async getById(req, res) {
     const { id } = req.params;
     const result = await db.query('SELECT * FROM TORNEIOS WHERE id = $1', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Torneio não encontrado' });
-    }
-    
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Torneio não encontrado' });
     res.json(result.rows[0]);
+  }
+
+  async getDetalhes(req, res) {
+    const { id } = req.params;
+    try {
+      const torneioRes = await db.query('SELECT * FROM TORNEIOS WHERE id = $1', [id]);
+      if (torneioRes.rows.length === 0) return res.status(404).json({ error: 'Torneio não encontrado' });
+
+      // Buscar categorias
+      const catsRes = await db.query('SELECT * FROM CATEGORIAS WHERE torneio_id = $1 ORDER BY criado_em ASC', [id]);
+      
+      // Buscar inscrições confirmadas e pendentes (com os nomes dos atletas)
+      const inscRes = await db.query(`
+        SELECT i.id, i.categoria_id, i.status, 
+               a1.nome_completo as atleta1, a2.nome_completo as atleta2
+        FROM INSCRICOES i
+        JOIN ATLETAS a1 ON i.atleta_id = a1.id
+        LEFT JOIN ATLETAS a2 ON i.parceiro_id = a2.id
+        WHERE i.torneio_id = $1
+      `, [id]);
+
+      const categoriasComInscricoes = catsRes.rows.map(c => ({
+        ...c,
+        inscricoes: inscRes.rows.filter(i => i.categoria_id === c.id)
+      }));
+
+      res.json({
+        torneio: torneioRes.rows[0],
+        categorias: categoriasComInscricoes
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Erro ao buscar detalhes' });
+    }
   }
 
   async create(req, res) {

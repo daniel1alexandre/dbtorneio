@@ -1,15 +1,16 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Trophy, DollarSign,
-  Settings, Wifi, LogOut, Volleyball, Users, Monitor
+  Settings, Wifi, LogOut, Users, Monitor
 } from 'lucide-react';
+import logo from '../assets/logo.jpg';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/inscricoes', icon: Users, label: 'Inscrições' },
   { to: '/cronograma', icon: Calendar, label: 'Cronograma' },
   { to: '/chaveamento', icon: Trophy, label: 'Chaveamento' },
-  { to: '/arbitro', icon: Volleyball, label: 'Árbitro' },
+  { to: '/arbitro', icon: Trophy, label: 'Árbitro' },
   { to: '/financeiro', icon: DollarSign, label: 'Financeiro' },
   { to: '/telao', icon: Monitor, label: 'Modo Telão' },
   { to: '/configuracoes', icon: Settings, label: 'Configurações' },
@@ -17,7 +18,7 @@ const navItems = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  
+
   const user = JSON.parse(localStorage.getItem('@TourneyBeach:user') || '{"nome": "Desconhecido", "tipo_usuario": "N/A"}');
 
   const handleLogout = () => {
@@ -33,16 +34,15 @@ export default function Sidebar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 10,
-            background: 'linear-gradient(135deg, #FF6600, #FF8833)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(255,102,0,0.4)',
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             flexShrink: 0,
           }}>
-            <Volleyball size={20} color="#fff" />
+            <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>
-              TourneyBeach
+              DBTorneios
             </div>
             <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
               Gestão de Torneios
@@ -97,14 +97,14 @@ export default function Sidebar() {
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textTransform: 'capitalize' }}>{user.tipo_usuario}</div>
           </div>
         </div>
-        <button 
+        <button
           onClick={handleLogout}
           style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-          background: 'transparent', color: 'rgba(255,255,255,0.45)', fontSize: 13,
-          fontFamily: 'inherit', transition: 'all 0.2s',
-        }}
+            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: 'transparent', color: 'rgba(255,255,255,0.45)', fontSize: 13,
+            fontFamily: 'inherit', transition: 'all 0.2s',
+          }}
           onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,0,0,0.15)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.background = 'transparent'; }}
         >

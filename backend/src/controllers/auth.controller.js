@@ -71,6 +71,48 @@ class AuthController {
       res.status(500).json({ error: 'Erro ao criar admin' });
     }
   }
+  async registerAtleta(req, res) {
+    const { nome, email, cpf, telefone, senha, nivel, genero, data_nascimento } = req.body;
+
+    if (!nome || !email || !cpf || !senha) {
+      return res.status(400).json({ error: 'Nome, email, CPF e senha são obrigatórios.' });
+    }
+
+    try {
+      await db.query('BEGIN');
+
+      const checkUser = await db.query('SELECT id FROM USUARIOS WHERE email = $1 OR cpf = $2', [email, cpf]);
+      if (checkUser.rows.length > 0) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Email ou CPF já cadastrado.' });
+      }
+
+      const hash = await bcrypt.hash(senha, 10);
+
+      // Criar usuário
+      const userRes = await db.query(
+        `INSERT INTO USUARIOS (nome, email, cpf, telefone, tipo_usuario, senha_hash) 
+         VALUES ($1, $2, $3, $4, 'atleta', $5) RETURNING id`,
+        [nome, email, cpf, telefone, hash]
+      );
+      const userId = userRes.rows[0].id;
+
+      // Criar perfil de atleta associado
+      await db.query(
+        `INSERT INTO ATLETAS (usuario_id, nome_completo, cpf, email, telefone, genero, data_nascimento, ranking_pontos) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 0)`,
+        [userId, nome, cpf, email, telefone || '00000000000', genero?.toLowerCase() || 'outro', data_nascimento || '2000-01-01']
+      );
+
+      await db.query('COMMIT');
+      
+      res.status(201).json({ message: 'Atleta cadastrado com sucesso.' });
+    } catch (error) {
+      await db.query('ROLLBACK');
+      console.error('Erro no cadastro:', error);
+      res.status(500).json({ error: 'Erro interno ao cadastrar atleta' });
+    }
+  }
 }
 
 module.exports = new AuthController();
